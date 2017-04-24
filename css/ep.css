@@ -1,0 +1,12 @@
+body {
+	font-size: small;
+	font-family: Courier;
+}
+
+div.output {
+	border-style: solid;
+	border-width: 1px;
+	border-color: lightGray;
+	margin-top: 4px;
+	background: #f2f2f2;
+}
