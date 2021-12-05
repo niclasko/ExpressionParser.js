@@ -1,17 +1,39 @@
 <html>
 	<head>
-		<title>Niclas Kj&auml;ll-Ohlsson</title>
-		<link rel="stylesheet" type="text/css" href="css/site.css">
+		<title>Expression Parser</title>
+		<link rel="stylesheet" type="text/css" href="css/ep.css">
+		<script type="text/javascript" src="js/ExpressionParser.js"></script>
+		<script type="text/javascript">
+			var ep;
+			function parseExpression(expression) {
+				ep = new ExpressionParser();
+				try {
+					ep.parse(expression);
+					addOutput(
+						ep.expression() + ' = ' + ep.value() + '<br>' +
+						ep.printTree()
+					);
+				} catch(e) {
+					addOutput(e);
+				}
+			}
+			function addOutput(output) {
+				var out = document.getElementById('output');
+				var div = document.createElement('div');
+				div.setAttribute('class', 'output');
+				div.innerHTML = output;
+				out.insertBefore(div, out.firstChild);
+			}
+			function input(target, e) {
+				if(e.keyCode == 13) { // Enter
+					parseExpression(target.value);
+					target.value = '';
+				}
+			}
+		</script>
 	</head>
 	<body>
-		<h3>Niclas Kj&auml;ll-Ohlsson<h3>
-		<a class="toplinks" href="http://github.com/niclasko">http://github.com/niclasko</a><br>
-		<a class="toplinks" href="https://no.linkedin.com/in/niclasko">https://no.linkedin.com/in/niclasko</a><br>
-		<a class="toplinks" href="misc/MSc_Niclas_Kjall-Ohlsson.pdf">MSc thesis</a>
-		<h4>Just for fun projects</h4>
-		<ul>
-			<li><a href="ExpressionParser/">ExpressionParser</a></li>
-			<li><a href="MineSweeper/">MineSweeper</a></li>
-		</ul>
+		<input id="expression" onkeyup="input(this, event);" style="width: 100%" placeholder="Type expression (e.g. ln(E)*PI^3+4/4*ln(E^2)+log(10000,10)) and press enter..."><br>
+		<div id="output"></div>
 	</body>
 </html>
