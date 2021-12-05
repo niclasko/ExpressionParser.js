@@ -4,9 +4,8 @@
 		<link rel="stylesheet" type="text/css" href="css/ep.css">
 		<script type="text/javascript" src="js/ExpressionParser.js"></script>
 		<script type="text/javascript">
-			var ep;
+			var ep = new ExpressionParser();
 			function parseExpression(expression) {
-				ep = new ExpressionParser();
 				try {
 					ep.parse(expression);
 					addOutput(
