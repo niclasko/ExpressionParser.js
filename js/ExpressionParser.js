@@ -33,13 +33,17 @@ function ExpressionParser() {
 	var variables = {};
 	
 	// For Shunting Yard Algorithm
+	var expressionStack = [];
 	var output = [];
 	var operators = [];
 	
 	var expressionTreeRoot = null;
 	var expressionTrees = [];
+
+	var longestListLength = 0;
 	
 	this.parse = function(_expression) {
+		longestListLength = 0;
 		expression = _expression;
 		if(parseAssignment()) {
 			return;
@@ -52,7 +56,14 @@ function ExpressionParser() {
 		if(expressionTreeRoot == null) {
 			return null;
 		}
-		return expressionTreeRoot.value();
+		var result = [];
+		if(longestListLength == 0) {
+			longestListLength = 1;
+		}
+		for(var i=0; i<longestListLength; i++) {
+			result.push(expressionTreeRoot.value());
+		}
+		return result;
 	};
 	
 	this.printTree = function() {
@@ -95,7 +106,7 @@ function ExpressionParser() {
 				finish();
 				setVariable(
 					variableName,
-					new Variable(expressionTreeRoot.value())
+					new Variable(expressionTreeRoot)
 				);
 				return true;
 			}
@@ -110,6 +121,24 @@ function ExpressionParser() {
 
 	var setVariable = function(variableName, value) {
 		variables[variableName] = value;
+	};
+
+	var newExpression = function() {
+		expressionStack.push({
+			"output": output,
+			"operators": operators,
+			"expressionTreeRoot": expressionTreeRoot
+		});
+		output = [];
+		operators = [];
+		expressionTreeRoot = null;
+	};
+
+	var endExpression = function() {
+		var currentExpression = expressionStack.pop();
+		output = currentExpression.output;
+		operators = currentExpression.operators;
+		expressionTreeRoot = currentExpression.expressionTreeRoot;
 	};
 	
 	var parseExpression = function() {
@@ -265,7 +294,9 @@ function ExpressionParser() {
 		if(variables[variableName] == undefined) {
 			throw exception('Variable ' + variableName + ' is not defined.');
 		}
-		return variables[variableName];
+		var variable = variables[variableName];
+		setListStats(variable.node());
+		return variable;
 	};
 	var allowedVariableCharacter = function() {
 		return allowedVariableCharacters.indexOf(currentChar()) > -1;
@@ -277,11 +308,14 @@ function ExpressionParser() {
 			var list = new List();
 			while(true) {
 				ignoreWhiteSpace();
+				newExpression();
 				if(!parseExpression()) {
 					throw exception("Expected expression.");
 				}
 				finish(true);
 				list.add(expressionTreeRoot.value());
+				endExpression();
+				setListStats(list);
 				if(!comma()) {
 					break;
 				}
@@ -296,6 +330,17 @@ function ExpressionParser() {
 			}
 		}
 		return false;
+	};
+	var setListStats = function(n) {
+		var item = n;
+		if(n.f) {
+			item = n.f();
+		}
+		if(!item.isList) {
+			return;
+		}
+		item.reset();
+		longestListLength = Math.max(item.size(), longestListLength);
 	};
 	var emptyToken = function() {
 		return token.length == 0;
@@ -398,6 +443,8 @@ function ExpressionParser() {
 			output.push(atom);
 		} else if(atom.f().isVariable) {
 			output.push(atom);
+		} else if(atom.f().isList) {
+			output.push(atom);
 		} else if(atom.f().isFunction) {
 			operators.push(atom);
 		} else if(atom.f().isComma) {
@@ -460,8 +507,6 @@ function ExpressionParser() {
 			position = 0;
 		}
 		token = '';
-		output = [];
-		operators = [];
 	};
 
 	this.getExpressionTrees = function() {
@@ -525,15 +570,6 @@ function ExpressionParser() {
 			}
 		}
 	};
-
-	Nothing: {
-		function Nothing() {
-			this.value = function() { return ""; };
-		};
-		var nothing = function() {
-			return new Atom("", new Nothing());
-		};
-	};
 	
 	Number: {
 		function Number(n) {
@@ -545,17 +581,25 @@ function ExpressionParser() {
 	List: {
 		function List() {
 			var list = [];
-			this.value = function() { return list; };
+			var currentIndex = 0;
+			this.value = function() {
+				if(currentIndex >= list.length) {
+					currentIndex = 0;
+				}
+				return list.length > 0 ? list[currentIndex++] : null;
+			};
 			this.add = function(item) { list.push(item); }
+			this.size = function() { return list.length; }
+			this.reset = function() { currentIndex = 0; }
 			this.isList = true;
 		};
 	};
 
 	Variable: {
-		function Variable(variableValue) {
+		function Variable(node) {
 			var self = this;
-			self.variableValue = variableValue;
-			self.value = function() { return self.variableValue; };
+			self.node = function() { return node; }
+			self.value = function() { return node.value(); };
 			self.isVariable = true;
 		};
 	};
