@@ -1,7 +1,7 @@
 # ExpressionParser.js
 Recursive descent parser for math expressions
 
-Support for variables and lists:<br>
+Support for variables, lists, and vectorized expressions (i.e., with lists):<br>
 x=[1,2,3,4]<br>
 y=[5,6,7]<br>
 x^2+x+3+y^3
